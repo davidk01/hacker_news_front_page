@@ -20,23 +20,31 @@ db_data = ['https://news.ycombinator.com/',
  'https://news.ycombinator.com/news?p=4'].flat_map do |page|
    frontpage = ScraperWiki.scrape(page)
    frontpage_html = Nokogiri::HTML(frontpage)
+   # these are the elements that can contains titles and links
    things = frontpage_html.css('tr.athing')
-   # Convert to hash maps with proper data
+   # now for each element extract the parts we want to scrape
    db_datas = things.map do |element|
+     # element that contains title and link
      maintext = element.css('td.title a').first
+     # the text and the associated link
      title, url = maintext.text, maintext['href']
+     # this is the element that contains author, points, etc.
+     # we just want the score which is the first element
      subtext = element.next.css('td.subtext').first
      # If there are no points in subtext then assume job post and skip
      if subtext.text !~ /points/
        next
      end
+     # now try to actually extract the points and author
      points = subtext.css('span').first.text.match(/(\d+)/)[1].to_i
+     # author
      author = subtext.css('a')[0].text
-     # There is a special case for comments. When there are no comments there is just 'discuss'
-     if subtext.css('a')[2].text =~ /discuss/
+     # the last element is the comment count which we also want
+     # there is a special case for comments. When there are no comments there is just 'discuss'
+     if subtext.css('a')[-1].text =~ /discuss/
        comments = 0
      else
-       comments = subtext.css('a')[2].text.match(/(\d+)/)[1].to_i
+       comments = subtext.css('a')[-1].text.match(/(\d+)/)[1].to_i
      end
      db_item = {
        'title' => title, 
