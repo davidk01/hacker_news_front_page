@@ -33,6 +33,7 @@ db_data = ['https://news.ycombinator.com/',
      subtext = element.next.css('td.subtext').first
      # If there are no points in subtext then assume job post and skip
      if subtext.text !~ /points/
+       puts "No poits. Assuming job post: #{title}"
        next
      end
      # now try to actually extract the points and author
@@ -42,10 +43,13 @@ db_data = ['https://news.ycombinator.com/',
      # the last element is the comment count which we also want
      # there is a special case for comments. When there are no comments there is just 'discuss'
      if subtext.css('a')[-1].text =~ /discuss/
+       puts "No comments yet for this entry: #{title}"
        comments = 0
      else
        comments = subtext.css('a')[-1].text.match(/(\d+)/)[1].to_i
+       puts "Found some comments: #{title}, #{comments}"
      end
+     puts "Creating DB item"
      db_item = {
        'title' => title, 
        'url' => url, 
@@ -57,7 +61,8 @@ db_data = ['https://news.ycombinator.com/',
  end
 
  # Filter out any 'nil' elements because of skips and special cases
- db_data.reject! {|element| element.nil?}
+db_data.reject! {|element| element.nil?}
+puts "Adding #{db_data.length} items to db"
 
  # Insert into database
  db_data.each do |data_item|
